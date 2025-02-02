@@ -14,36 +14,32 @@ AndrewID: XXXX
 
 Step 1: Clone
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step1-github-ref-1.png" alt="Github-CLI">
-</div>
-or
-<div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step1-github-ref-2.png" alt="Github-Web">
+    <img src="A0-writeup/reference/myscotty3d_repo.png" alt="Github-Web">
 </div>
 
 Step 2: General Setup
 
 Visual Studio:
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step2-vs-ref.png" alt="Visual Studio">
+    <img src="A0-writeup/reference/vscode_installed.png" alt="Visual Studio">
 </div>
 
 Node:
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step2-node-ref.png" alt="Node">
+    <img src="A0-writeup/reference/node_working.png" alt="Node">
 </div>
 
 Nest-libs:
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step2-nest-libs-ref.png" alt="Nest-libs">
+    <img src="A0-writeup/reference/nest-libs.png" alt="Nest-libs">
 </div>
 
 Step 3: Build and Run
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step3-GUI-ref.png" alt="GUI">
+    <img src="A0-writeup/reference/scotty3d_working.png" alt="GUI">
 </div>
 <div class="twentytwenty-container">
-    <img src="A0-writeup/reference/step3-tests-ref.png" alt="Run-tests">
+    <img src="A0-writeup/reference/scotty3d_runtests.png" alt="Run-tests">
 </div>
 
 (##) A0T2
@@ -53,13 +49,16 @@ Your completion of this task will be graded based on your `test.a0.task2.problem
 For each of the problems you solved in task 2, characterise the bug in your own words and explain one other scenario that may cause this 
 type of bug.
 
-Problem 1:
+Problem 1: The first bug was that str was defined as string instead of std::string. There was also a missing semicolon and a typo with cout. This type of bug would also be caused if you defined a vector as vector instead of std::vector.
 
-Problem 2:
+Problem 2: The error was that dividing two integers causes the result to get rounded down to the nearest int, instead of being a decimal number. If you say double x = 3/2, you might expect x to be 1.5, but it will actually be 1.0.
+
 
 Problem 3:
+The bug is that end() returns a pointer to after the end of the array, instead of the last element. Let's say you wanted to iterate through a list in reverse, and you started the iterator at end(). Dereferencing the iterator to get the first element in the reversed array would be undefined behavior.
 
 Problem 4:
+The error was that the if clause had x == y == z but c++ does not support this notation. You must do x == y and y == z. A similar issue would occur if you wanted to check if y was between x and z and said x &lt; y &lt; z. 
 
 
 (##) A0T3
@@ -69,6 +68,11 @@ You do not need any screenshots for this task. Your completion will be graded ba
 (##) Feedback
 
 Use this section to provide feedback about the assignment.
+Time Spent Task 1: 5+ hours. My Windows machine was giving me a lot of problems in general and I didnt know I had to open vscode with "code ." in the x64 terminal until talking to a TA.
+
+Time Spent Task 2: 1 hour
+
+Time Spent Task 3: 1 hour
 
 <!--- Markdeep & image comparison library - probably no need to change anything below -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
