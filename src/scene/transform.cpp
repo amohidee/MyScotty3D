@@ -11,16 +11,28 @@ Mat4 Transform::parent_to_local() const {
 
 Mat4 Transform::local_to_world() const {
 	// A1T1: local_to_world
-	//don't use Mat4::inverse() in your code.
-
-	return Mat4::I; //<-- wrong, but here so code will compile
+	//...
+	if (std::shared_ptr< Transform > parent_ = parent.lock()) {
+		//case where transform has a parent
+		// TODO: make recursive !
+		return parent_->local_to_world() * Mat4::translate(translation) * rotation.to_mat() * Mat4::scale(scale);
+	} else {
+		//case where transform doesn't have a parent
+		return Mat4::translate(translation) * rotation.to_mat() * Mat4::scale(scale);
+	}
 }
 
 Mat4 Transform::world_to_local() const {
 	// A1T1: world_to_local
 	//don't use Mat4::inverse() in your code.
-
-	return Mat4::I; //<-- wrong, but here so code will compile
+	if (std::shared_ptr< Transform > parent_ = parent.lock()) {
+		//case where transform has a parent
+		// TODO: make recursive !
+		return Mat4::scale(1.0f / scale) * rotation.inverse().to_mat() * Mat4::translate(-translation) * parent_->world_to_local();
+	} else {
+		//case where transform doesn't have a parent
+		return Mat4::scale(1.0f / scale) * rotation.inverse().to_mat() * Mat4::translate(-translation);
+	}
 }
 
 bool operator!=(const Transform& a, const Transform& b) {

@@ -312,4 +312,147 @@ Test test_a1_task3_raster_thin_2px("a1.task3.raster.thin.2px", []() {
 	);
 });
 
+Test test_a1_task3_degenerate_1("a1.task3.degenerate.1", []() {
+    check_rasterize_triangles(
+        "Degenerate triangle (diagonal, on pixel centers)", 
+        {
+            FPClippedVertex{Vec3{1.5f, 1.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{2.5f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{3.5f, 3.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // degenerate triangles should not emit any fragments!
+
+        }
+    );
+});
+
+Test test_a1_task3_degenerate_2("a1.task3.degenerate.2", []() {
+    check_rasterize_triangles(
+        "Degenerate triangle (flat, on pixel centers)", 
+        {
+            FPClippedVertex{Vec3{1.5f, 1.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 3.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // degenerate triangles should not emit any fragments!
+
+        }
+    );
+});
+
+Test test_a1_task3_degenerate_3("a1.task3.degenerate.3", []() {
+    check_rasterize_triangles(
+        "Two flat degenerate triangles on top of one another", 
+        {
+            FPClippedVertex{Vec3{1.5f, 1.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 3.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 1.5f, 0.5f}, 1.0f, {-1.0f}},
+            FPClippedVertex{Vec3{1.5f, 2.5f, 0.5f}, 1.0f, {-1.0f}},
+            FPClippedVertex{Vec3{1.5f, 3.5f, 0.5f}, 1.0f, {-1.0f}}          
+        },
+        { // degenerate triangles should not emit any fragments!
+
+        }
+    );
+});
+
+
+Test test_a1_task3_edge_top("a1.task3.edge.top", []() {
+    check_rasterize_triangles(
+        "Triangle with horizontal top edge", 
+        {
+            FPClippedVertex{Vec3{0.1f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{0.5f, 1.0f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{4.0f, 2.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // has top edge
+            FPFragment{ Vec3{ 0.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 2.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 3.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 0.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
+Test test_a1_task3_edge_bottom("a1.task3.edge.bottom", []() {
+    check_rasterize_triangles(
+        "Triangle with horizontal bottom edge", 
+        {
+            FPClippedVertex{Vec3{0.1f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{0.5f, 4.0f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{4.0f, 2.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // no bottom edge
+            FPFragment{ Vec3{ 0.5f, 3.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 3.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
+Test test_a1_task3_edge_left1("a1.task3.edge.left1", []() {
+    check_rasterize_triangles(
+        "Triangle with left edge 1", 
+        {
+            FPClippedVertex{Vec3{0.5f, 1.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 0.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{2.0f, 3.0f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // has left edge
+            FPFragment{ Vec3{ 0.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
+Test test_a1_task3_edge_left2("a1.task3.edge.left2", []() {
+    check_rasterize_triangles(
+        "Triangle with left edge 2", 
+        {
+            FPClippedVertex{Vec3{1.0f, 2.0f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{5.0f, 2.0f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{7.0f, 4.0f, 0.5f}, 1.0f, {1.0f}}
+        },
+        { // has left edge
+            FPFragment{ Vec3{ 2.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 3.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 4.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 5.5f, 3.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
+Test test_a1_task3_edge_corner("a1.task3.edge.corner", []() {
+    check_rasterize_triangles(
+        "Triangle with corner edge", 
+        {
+            FPClippedVertex{Vec3{0.5f, 0.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{0.5f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{2.5f, 2.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        {
+            FPFragment{ Vec3{ 0.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 0.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+            FPFragment{ Vec3{ 1.5f, 2.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
+Test test_a1_task3_edge_vertical("a1.task3.edge.vertical", []() {
+    check_rasterize_triangles(
+        "Triangle with vertical edge", 
+        {
+            FPClippedVertex{Vec3{0.5f, 0.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{0.5f, 2.5f, 0.5f}, 1.0f, {1.0f}},
+            FPClippedVertex{Vec3{1.5f, 1.5f, 0.5f}, 1.0f, {1.0f}}
+        },
+        {
+            FPFragment{ Vec3{ 0.5f, 1.5f, 0.5f }, {1.0f}, { Vec2{0.0f} } },
+        }
+    );
+});
+
 

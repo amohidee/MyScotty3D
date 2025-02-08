@@ -185,4 +185,116 @@ Test test_a1_task2_simple_vertical("a1.task2.simple.vertical", []() {
 	);
 });
 
+Test test_a1_task2_diamond_edge("a1.task2.diamond.edge", []() {
+    check_line_covers(
+        "line beginning and ending on diamond edge from (0.75, 0.75) to (1.25, 1.25)",
+        { Vec2(0.75f, 0.75f), Vec2(1.25f, 1.25f) },
+        {"...",
+         "...",
+         "#.."}
+    );
+});
+
+Test test_a1_task2_diamond_edge_same("a1.task2.diamond.edge.same", []() {
+    check_line_covers(
+        "line beginning and ending on edges of the _same_ diamond from (0.25, 0.25) to (0.75, 0.75)",
+        { Vec2(0.25f, 0.25f), Vec2(0.75f, 0.75f) },
+        {"...",
+         "...",
+         "..."}
+    );
+});
+
+Test test_a1_task2_diamond_edge_vertex("a1.task2.diamond.edge.vertex", []() {
+    check_line_covers(
+        "line beginning on vertex edge and ending on right vertex of the same diamond (0.25, 0.25) to (1.0, 0.5)",
+        { Vec2(0.25f, 0.25f), Vec2(1.0f, 0.5f) },
+        {"...",
+         "...",
+         "#.."}
+    );
+});
+
+Test test_a1_task2_diamond_vertex_top("a1.task2.diamond.vertex.top", []() {
+    check_line_covers(
+        "line tangent to top diamond vertex from (0.0, 1.0) to (2.8, 1.0)",
+        { Vec2(0.0f, 1.0f), Vec2(2.8f, 1.0f) },
+        {"...",
+         "###",
+         "..."}
+    );
+});
+
+Test test_a1_task2_diamond_vertex_left("a1.task2.diamond.vertex.left", []() {
+    check_line_covers(
+        "line tangent to left diamond vertex from (1.0, .125) to (1.0, 2.875)",
+        { Vec2(1.0f, .125f), Vec2(1.0f, 2.875f) },
+        {".#.",
+         ".#.",
+         ".#."}
+    );
+});
+
+
+Test test_a1_task2_single_pixel_1("a1.task2.single.pixel.1", []() {
+    check_line_covers(
+        "line within one pixel from (2.5, 2.5) to (2.975, 2.125)",
+        { Vec2(2.5f, 2.5f), Vec2(2.975f, 2.125f) },
+        {"....",
+         "..#.",
+         "....",
+         "...."}
+    );
+});
+
+Test test_a1_task2_single_pixel_2("a1.task2.single.pixel.2", []() {
+    check_line_covers(
+        "line within one pixel from (1.125, 1.25) to (1.875, 1.25)",
+        { Vec2(1.125f, 1.25f), Vec2(1.875f, 1.25f) },
+        {"...",
+         ".#.",
+         "..."}
+    );
+});
+
+Test test_a1_task2_single_pixel_3("a1.task2.single.pixel.3", []() {
+    check_line_covers(
+        "just one point inside the diamond",
+        { Vec2(1.5f, 1.5f), Vec2(1.5f, 1.5f) },
+        {"...",
+         "...",
+         "..."}
+    );
+});
+
+Test test_a1_task2_single_pixel_4("a1.task2.single.pixel.4", []() {
+    check_line_covers(
+        "just one point outside the diamond",
+        { Vec2(1.125f, 1.25f), Vec2(1.125f, 1.25f) },
+        {"...",
+         "...",
+         "..."}
+    );
+});
+
+Test test_a1_task2_single_pixel_5("a1.task2.single.pixel.5", []() {
+    check_line_covers(
+        "line within one pixel from (1.125, 1.25) to (1.5, 1.25)",
+        { Vec2(1.125f, 1.25f), Vec2(1.5f, 1.25f) },
+        {"...",
+         "...",
+         "..."}
+    );
+});
+
+Test test_a1_task2_single_pixel_6("a1.task2.single.pixel.6", []() {
+    check_line_covers(
+        "line within one pixel from (1.5, 1.25) to (1.875, 1.3)",
+        { Vec2(1.5f, 1.25f), Vec2(1.875f, 1.3f) },
+        {"...",
+         ".#.",
+         "..."}
+    );
+});
+
 
