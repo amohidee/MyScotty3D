@@ -26,7 +26,29 @@ Spectrum sample_bilinear(HDR_Image const &image, Vec2 uv) {
 	// A1T6: sample_bilinear
 	//TODO: implement bilinear sampling strategy on texture 'image'
 
-	return sample_nearest(image, uv); //placeholder so image doesn't look blank
+	float x = image.w * std::clamp(uv.x, 0.0f, 1.0f);
+    float y = image.h * std::clamp(uv.y, 0.0f, 1.0f);
+
+    int x0 = std::max(int32_t(std::floor(x - 0.5)), 0);
+    int y0 = std::max(int32_t(std::floor(y - 0.5)), 0);
+    int x1 = std::min(x0 + 1, int(image.w) - 1);
+    int y1 = std::min(y0 + 1, int(image.h) - 1);
+
+    float dx = std::max(x - (x0 + 0.5F), 0.0f);
+    float dy = std::max(y - (y0 + 0.5F), 0.0f);
+
+    // 4 nearest texels
+    Spectrum t00 = image.at(x0, y0); 
+    Spectrum t10 = image.at(x1, y0); 
+    Spectrum t01 = image.at(x0, y1);
+    Spectrum t11 = image.at(x1, y1);
+
+    // interpolation
+    Spectrum tx = (1.0f - dx) * t00 + dx * t10; 
+    Spectrum ty = (1.0f - dx) * t01 + dx * t11;
+    Spectrum t  = (1.0f - dy) * tx + dy * ty;
+
+    return t;
 }
 
 
@@ -34,7 +56,33 @@ Spectrum sample_trilinear(HDR_Image const &base, std::vector< HDR_Image > const 
 	// A1T6: sample_trilinear
 	//TODO: implement trilinear sampling strategy on using mip-map 'levels'
 
-	return sample_nearest(base, uv); //placeholder so image doesn't look blank
+	size_t max_level = levels.size();
+
+	std::cout << "lod (sample trilinear): " << lod << "\n";
+	
+    float clamped_lod = std::clamp(lod, 0.0f, float(max_level));
+
+    int d = int(std::floor(clamped_lod));
+
+	std::cout << "d: " << d << "\n";
+
+    int d1 = std::min(d + 1, int(max_level));
+
+    float dd = clamped_lod - d;
+
+
+    Spectrum td = (d == 0) ? sample_bilinear(base, uv) : sample_bilinear(levels[d - 1], uv);
+    Spectrum td1 = (d1 == 0) ? sample_bilinear(base, uv): sample_bilinear(levels[d1 - 1], uv);
+
+	std::cout << "dd: " << dd << "\n";
+	std::cout << "td: " << td << "\n";
+	std::cout << "td1: " << td1 << "\n";
+
+	auto output = (1.0f - dd) * td + dd * td1;
+
+	std::cout << "trilinear output: " << output << "\n";
+
+    return output;
 }
 
 /*
@@ -92,6 +140,22 @@ void generate_mipmap(HDR_Image const &base, std::vector< HDR_Image > *levels_) {
 		//TODO: Write code to fill the levels of the mipmap hierarchy by downsampling
 
 		//Be aware that the alignment of the samples in dst and src will be different depending on whether the image is even or odd.
+		for (uint32_t y = 0; y < dst.h; ++y) {
+            for (uint32_t x = 0; x < dst.w; ++x) {
+                // Compute corresponding source coordinates
+                uint32_t src_x = x * 2;
+                uint32_t src_y = y * 2;
+
+                // Gather pixel samples (handling odd sizes)
+                Spectrum t00 = src.at(src_x, src_y);
+                Spectrum t10 = (src_x + 1 < src.w) ? src.at(src_x + 1, src_y) : t00;
+                Spectrum t01 = (src_y + 1 < src.h) ? src.at(src_x, src_y + 1) : t00;
+                Spectrum t11 = (src_x + 1 < src.w && src_y + 1 < src.h) ? src.at(src_x + 1, src_y + 1) : t00;
+
+                // Compute downsampled pixel (box filter average)
+                dst.at(x, y) = (t00 + t10 + t01 + t11) / 4.0f;
+            }
+        }
 
 	};
 

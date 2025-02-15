@@ -716,16 +716,373 @@ void Pipeline<p, P, flags>::rasterize_triangle(
 		// A1T5: screen-space smooth triangles
 		// TODO: rasterize triangle (see block comment above this function).
 
-		// As a placeholder, here's code that calls the Flat interpolation version of the function:
-		//(remove this and replace it with a real solution)
-		Pipeline<PrimitiveType::Lines, P, (flags & ~PipelineMask_Interp) | Pipeline_Interp_Flat>::rasterize_triangle(va, vb, vc, emit_fragment);
+		float ax = va.fb_position.x, ay = va.fb_position.y; 
+        float bx = vb.fb_position.x, by = vb.fb_position.y; 
+        float cx = vc.fb_position.x, cy = vc.fb_position.y; 
+
+		float az = va.fb_position.z;
+		float bz = vb.fb_position.z;
+		float cz = vc.fb_position.z;
+
+		 // bounding box
+        float minX = std::floor(std::min({ax, bx, cx}));
+        float minY = std::floor(std::min({ay, by, cy}));
+        float maxX = std::ceil(std::max({ax, bx, cx}));
+        float maxY = std::ceil(std::max({ay, by, cy}));
+
+		auto cross_product = [](Vec2 v1, Vec2 v2) -> float {
+        	return v1.x * v2.y - v1.y * v2.x;
+    	};
+
+		auto point_in_triangle = [&](float x , float y) -> bool {
+            Vec2 ac (cx - ax, cy - ay);
+            Vec2 ab (bx - ax, by - ay);
+            Vec2 cb (bx - cx, by - cy);
+            Vec2 ca (ax - cx, ay - cy);
+            Vec2 ba (ax - bx, ay - by);
+            Vec2 bc (cx - bx, cy - by);
+
+            Vec2 aq (x - ax, y - ay);
+            Vec2 cq (x - cx, y - cy);
+            Vec2 bq (x - bx, y - by);
+
+            float w1 = cross_product(ac, ab) * cross_product(ac, aq);
+            float w2 = cross_product(cb, ca) * cross_product(cb, cq);
+            float w3 = cross_product(ba, bc) * cross_product(ba, bq);
+
+            return (w1 > 0 && w2 > 0 && w3 > 0) || (w1 < 0 && w2 < 0 && w3 < 0);
+        };
+
+		// winding > 0 = CCW, winding < 0 = CW
+		Vec2 ab (bx - ax, by - ay);
+		Vec2 ac (cx - ax, cy - ay);
+		float winding = cross_product(ab, ac);
+
+		if (winding == 0) {
+			return;
+		}
+
+		auto is_top_left_edge = [](float v1x, float v1y, float v2x, float v2y, float v3x, float v3y, float winding) -> bool {
+			if (winding < 0) {
+				// top edge
+				if (v1y == v2y && v1y > v3y) return true;
+				// left edge
+				if (v1y < v2y) return true;
+			} 
+			if (winding > 0) {
+				// top edge
+				if (v1y == v2y && v1y > v3y) return true;
+				// left edge
+				if (v1y > v2y) return true;
+			}
+            
+            return false;
+        };
+
+		bool top_left_ab = is_top_left_edge(ax, ay, bx, by, cx, cy, winding);
+        bool top_left_bc = is_top_left_edge(bx, by, cx, cy, ax, ay, winding);
+        bool top_left_ca = is_top_left_edge(cx, cy, ax, ay, bx, by, winding);
+
+		// from stackoverflow
+		// check if c is between a and b
+		auto isBetween = [](Vec2 a, Vec2 b, Vec2 c) {
+			float crossproduct = (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y);
+
+			// compare versus epsilon for floating point values, or != 0 if using integers
+			if (std::abs(crossproduct) > 0) {
+				return false;
+			}
+				
+
+			float dotproduct = (c.x - a.x) * (b.x - a.x) + (c.y - a.y)*(b.y - a.y);
+			if (dotproduct < 0) {
+				return false;
+			}
+				
+
+			float squaredlengthba = (b.x - a.x)*(b.x - a.x) + (b.y - a.y)*(b.y - a.y);
+			if (dotproduct > squaredlengthba) {
+				return false;
+			}
+				
+
+			return true;
+
+		};
+			
+
+        float area = 0.5f * std::abs(cross_product(ab, ac));
+        if (area == 0.0f) return;
+
+        // iterate over pixels in bounding box
+        for (float y = minY; y <= maxY; y++) {
+            for (float x = minX; x <= maxX; x++) {
+
+				// pixel
+				float px = x + 0.5f;
+				float py = y + 0.5f;
+				//std::cout << "px: " << px << ", py: " << py << ", "; 
+
+				Vec2 pix (px, py);
+				Vec2 a (ax, ay);
+				Vec2 b (bx, by);
+				Vec2 c (cx, cy);
+
+				bool on_ab = isBetween(a, b, pix); // (py - ay) * (bx - ax) == (px - ax) * (by - ay);
+				bool on_bc = isBetween(b, c, pix); //(py - by) * (cx - bx) == (px - bx) * (cy - by);
+				bool on_ca = isBetween(c, a, pix); //(py - cy) * (ax - cx) == (px - cx) * (ay - cy);
+				
+				bool on_top_left = (on_ab && top_left_ab) || (on_bc && top_left_bc) || (on_ca && top_left_ca);
+				bool on_non_top_left = (on_ab && !top_left_ab) || (on_bc && !top_left_bc) || (on_ca && !top_left_ca);
+
+				if (on_non_top_left) {
+					on_top_left = false;
+				}
+
+				
+
+				if (point_in_triangle(px, py) || on_top_left) {
+					// if point in triangle
+					Vec2 pb (bx - px, by - py);
+					Vec2 pc (cx - px, cy - py);
+					Vec2 pa (ax - px, ay - py);
+					float phi_a = 0.5f * std::abs(cross_product(pb, pc)) / area;
+					float phi_b = 0.5f * std::abs(cross_product(pa, pc)) / area;
+					float phi_c = 0.5f * std::abs(cross_product(pa, pb)) / area;
+
+					float pz = phi_a * az + phi_b * bz + phi_c * cz;
+
+					// calculate attributes
+					std::array<float, FA> frag_attributes;
+					std::array<Vec2, FD> frag_derivatives;
+					for (size_t i = 0; i < FA; i++) {
+						frag_attributes[i] = phi_a * va.attributes[i] + phi_b * vb.attributes[i] + phi_c * vc.attributes[i];
+
+					}
+
+					for (size_t i = 0; i < FD; i++) {
+						// derivative implementation attempt 2 (take derivative of barycentric formula)
+						float dL0_dx = (by - cy) / (2 * area);
+						float dL0_dy = (cx - bx) / (2 * area);
+
+						float dL1_dx = (cy - ay) / (2 * area);
+						float dL1_dy = (ax - cx) / (2 * area);
+
+						float dL2_dx = (ay - by) / (2 * area);
+						float dL2_dy = (bx - ax) / (2 * area);
+						float A0 = va.attributes[i];
+						float A1 = vb.attributes[i];
+						float A2 = vc.attributes[i];
+
+						float dA_dx = A0 * dL0_dx + A1 * dL1_dx + A2 * dL2_dx;
+						float dA_dy = A0 * dL0_dy + A1 * dL1_dy + A2 * dL2_dy;
+						frag_derivatives[i] = Vec2(dA_dx, dA_dy);
+
+					}
+					
+					Fragment frag;
+					frag.fb_position = Vec3(px, py, pz);
+					frag.derivatives = frag_derivatives;
+					frag.attributes = frag_attributes;
+					emit_fragment(frag);
+
+					// std::cout << "Fragment at (" 
+					// << frag.fb_position.x << ", " 
+					// << frag.fb_position.y << ", " 
+					// << frag.fb_position.z << ")";
+
+				}
+				
+            }
+        }
+
+		
 	} else if constexpr ((flags & PipelineMask_Interp) == Pipeline_Interp_Correct) {
 		// A1T5: perspective correct triangles
 		// TODO: rasterize triangle (block comment above this function).
 
-		// As a placeholder, here's code that calls the Screen-space interpolation function:
-		//(remove this and replace it with a real solution)
-		Pipeline<PrimitiveType::Lines, P, (flags & ~PipelineMask_Interp) | Pipeline_Interp_Smooth>::rasterize_triangle(va, vb, vc, emit_fragment);
+		float ax = va.fb_position.x, ay = va.fb_position.y; 
+        float bx = vb.fb_position.x, by = vb.fb_position.y; 
+        float cx = vc.fb_position.x, cy = vc.fb_position.y; 
+
+		float az = va.fb_position.z;
+		float bz = vb.fb_position.z;
+		float cz = vc.fb_position.z;
+
+		 // bounding box
+        float minX = std::floor(std::min({ax, bx, cx}));
+        float minY = std::floor(std::min({ay, by, cy}));
+        float maxX = std::ceil(std::max({ax, bx, cx}));
+        float maxY = std::ceil(std::max({ay, by, cy}));
+
+		auto cross_product = [](Vec2 v1, Vec2 v2) -> float {
+        	return v1.x * v2.y - v1.y * v2.x;
+    	};
+
+		auto point_in_triangle = [&](float x , float y) -> bool {
+            Vec2 ac (cx - ax, cy - ay);
+            Vec2 ab (bx - ax, by - ay);
+            Vec2 cb (bx - cx, by - cy);
+            Vec2 ca (ax - cx, ay - cy);
+            Vec2 ba (ax - bx, ay - by);
+            Vec2 bc (cx - bx, cy - by);
+
+            Vec2 aq (x - ax, y - ay);
+            Vec2 cq (x - cx, y - cy);
+            Vec2 bq (x - bx, y - by);
+
+            float w1 = cross_product(ac, ab) * cross_product(ac, aq);
+            float w2 = cross_product(cb, ca) * cross_product(cb, cq);
+            float w3 = cross_product(ba, bc) * cross_product(ba, bq);
+
+            return (w1 > 0 && w2 > 0 && w3 > 0) || (w1 < 0 && w2 < 0 && w3 < 0);
+        };
+
+		// winding > 0 = CCW, winding < 0 = CW
+		Vec2 ab (bx - ax, by - ay);
+		Vec2 ac (cx - ax, cy - ay);
+		float winding = cross_product(ab, ac);
+
+		if (winding == 0) {
+			return;
+		}
+
+		auto is_top_left_edge = [](float v1x, float v1y, float v2x, float v2y, float v3x, float v3y, float winding) -> bool {
+			if (winding < 0) {
+				// top edge
+				if (v1y == v2y && v1y > v3y) return true;
+				// left edge
+				if (v1y < v2y) return true;
+			} 
+			if (winding > 0) {
+				// top edge
+				if (v1y == v2y && v1y > v3y) return true;
+				// left edge
+				if (v1y > v2y) return true;
+			}
+            
+            return false;
+        };
+
+		bool top_left_ab = is_top_left_edge(ax, ay, bx, by, cx, cy, winding);
+        bool top_left_bc = is_top_left_edge(bx, by, cx, cy, ax, ay, winding);
+        bool top_left_ca = is_top_left_edge(cx, cy, ax, ay, bx, by, winding);
+
+		// from stackoverflow
+		// check if c is between a and b
+		auto isBetween = [](Vec2 a, Vec2 b, Vec2 c) {
+			float crossproduct = (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y);
+
+			// compare versus epsilon for floating point values, or != 0 if using integers
+			if (std::abs(crossproduct) > 0) {
+				return false;
+			}
+				
+
+			float dotproduct = (c.x - a.x) * (b.x - a.x) + (c.y - a.y)*(b.y - a.y);
+			if (dotproduct < 0) {
+				return false;
+			}
+				
+
+			float squaredlengthba = (b.x - a.x)*(b.x - a.x) + (b.y - a.y)*(b.y - a.y);
+			if (dotproduct > squaredlengthba) {
+				return false;
+			}
+				
+
+			return true;
+
+		};
+			
+
+        float area = 0.5f * std::abs(cross_product(ab, ac));
+        if (area == 0.0f) return;
+
+        // iterate over pixels in bounding box
+        for (float y = minY; y <= maxY; y++) {
+            for (float x = minX; x <= maxX; x++) {
+
+				// pixel
+				float px = x + 0.5f;
+				float py = y + 0.5f;
+				//std::cout << "px: " << px << ", py: " << py << ", "; 
+
+				Vec2 pix (px, py);
+				Vec2 a (ax, ay);
+				Vec2 b (bx, by);
+				Vec2 c (cx, cy);
+
+				bool on_ab = isBetween(a, b, pix); // (py - ay) * (bx - ax) == (px - ax) * (by - ay);
+				bool on_bc = isBetween(b, c, pix); //(py - by) * (cx - bx) == (px - bx) * (cy - by);
+				bool on_ca = isBetween(c, a, pix); //(py - cy) * (ax - cx) == (px - cx) * (ay - cy);
+				
+				bool on_top_left = (on_ab && top_left_ab) || (on_bc && top_left_bc) || (on_ca && top_left_ca);
+				bool on_non_top_left = (on_ab && !top_left_ab) || (on_bc && !top_left_bc) || (on_ca && !top_left_ca);
+
+				if (on_non_top_left) {
+					on_top_left = false;
+				}
+
+				
+
+				if (point_in_triangle(px, py) || on_top_left) {
+					// if point in triangle
+					Vec2 pb (bx - px, by - py);
+					Vec2 pc (cx - px, cy - py);
+					Vec2 pa (ax - px, ay - py);
+					float phi_a = 0.5f * std::abs(cross_product(pb, pc)) / area;
+					float phi_b = 0.5f * std::abs(cross_product(pa, pc)) / area;
+					float phi_c = 0.5f * std::abs(cross_product(pa, pb)) / area;
+
+					float pz = phi_a * az + phi_b * bz + phi_c * cz;
+
+					// interpolate inverse 4th component
+					float w_a = va.inv_w;
+					float w_b = vb.inv_w;
+					float w_c = vc.inv_w;
+
+					float inter_inv_w = phi_a * w_a + phi_b * w_b + phi_c * w_c;
+
+					// calculate attributes
+					std::array<float, FA> frag_attributes;
+					std::array<Vec2, FD> frag_derivatives;
+					for (size_t i = 0; i < FA; i++) {
+						// interpolate phi / w
+						float inter_phi_w = phi_a * va.attributes[i] * w_a + phi_b * vb.attributes[i] * w_b + phi_c * vc.attributes[i] * w_c;
+						frag_attributes[i] = inter_phi_w / inter_inv_w;
+
+					}
+
+					for (size_t i = 0; i < FD; i++) {
+						// derivative implementation attempt 2 (take derivative of barycentric formula)
+						float dL0_dx = (by - cy) / (2 * area);
+						float dL0_dy = (cx - bx) / (2 * area);
+
+						float dL1_dx = (cy - ay) / (2 * area);
+						float dL1_dy = (ax - cx) / (2 * area);
+
+						float dL2_dx = (ay - by) / (2 * area);
+						float dL2_dy = (bx - ax) / (2 * area);
+						float A0 = va.attributes[i] * w_a;
+						float A1 = vb.attributes[i] * w_b;
+						float A2 = vc.attributes[i] * w_c;
+
+						float dA_dx = (A0 * dL0_dx + A1 * dL1_dx + A2 * dL2_dx) / inter_inv_w;
+						float dA_dy = (A0 * dL0_dy + A1 * dL1_dy + A2 * dL2_dy) / inter_inv_w;
+						frag_derivatives[i] = Vec2(dA_dx, dA_dy);
+
+					}
+					
+					Fragment frag;
+					frag.fb_position = Vec3(px, py, pz);
+					frag.derivatives = frag_derivatives;
+					frag.attributes = frag_attributes;
+					emit_fragment(frag);
+				}
+				
+            }
+        }
 	}
 }
 
