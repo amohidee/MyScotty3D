@@ -123,6 +123,7 @@ void Pipeline<primitive_type, Program, flags>::run(std::vector<Vertex> const& ve
 		// so we suggest leaving it in place:
 		if (x < 0 || (uint32_t)x >= framebuffer.width || 
 		    y < 0 || (uint32_t)y >= framebuffer.height) {
+			//std::cout << "x: " << x << ",  " << "y: " << y << "\n";
 			++out_of_range;
 			continue;
 		}
@@ -184,6 +185,7 @@ void Pipeline<primitive_type, Program, flags>::run(std::vector<Vertex> const& ve
 			     "wrong with the clip_line function.",
 			     out_of_range);
 		} else if constexpr (primitive_type == PrimitiveType::Triangles) {
+			std::cout << "fb width: " << framebuffer.width << ", " << "fb height: " << framebuffer.height << "\n";
 			warn("Produced %d fragments outside framebuffer; this indicates something is likely "
 			     "wrong with the clip_triangle function.",
 			     out_of_range);

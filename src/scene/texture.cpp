@@ -29,13 +29,19 @@ Spectrum sample_bilinear(HDR_Image const &image, Vec2 uv) {
 	float x = image.w * std::clamp(uv.x, 0.0f, 1.0f);
     float y = image.h * std::clamp(uv.y, 0.0f, 1.0f);
 
-    int x0 = std::max(int32_t(std::floor(x - 0.5)), 0);
-    int y0 = std::max(int32_t(std::floor(y - 0.5)), 0);
-    int x1 = std::min(x0 + 1, int(image.w) - 1);
-    int y1 = std::min(y0 + 1, int(image.h) - 1);
+    int x0 = std::clamp(int32_t(std::floor(x - 0.5)), 0, int32_t(image.w) - 1);
+    int y0 = std::clamp(int32_t(std::floor(y - 0.5)), 0, int32_t(image.h) - 1);
+    int x1 = std::clamp(x0 + 1, 0, int32_t(image.w) - 1);
+    int y1 = std::clamp(y0 + 1, 0, int32_t(image.h) - 1);
 
     float dx = std::max(x - (x0 + 0.5F), 0.0f);
     float dy = std::max(y - (y0 + 0.5F), 0.0f);
+
+
+	//std::cout << "(" << x0 << ", " << y0 << ", " << x1 << ", " << y1 << ")\n";
+	if (x1 > 1999 || y1 > 500 || x0 > 1999 || y0 > 500) {
+		std::cout << "(" << x0 << ", " << y0 << ", " << x1 << ", " << y1 << ")\n";
+	}
 
     // 4 nearest texels
     Spectrum t00 = image.at(x0, y0); 
@@ -57,14 +63,10 @@ Spectrum sample_trilinear(HDR_Image const &base, std::vector< HDR_Image > const 
 	//TODO: implement trilinear sampling strategy on using mip-map 'levels'
 
 	size_t max_level = levels.size();
-
-	std::cout << "lod (sample trilinear): " << lod << "\n";
 	
     float clamped_lod = std::clamp(lod, 0.0f, float(max_level));
 
     int d = int(std::floor(clamped_lod));
-
-	std::cout << "d: " << d << "\n";
 
     int d1 = std::min(d + 1, int(max_level));
 
@@ -74,13 +76,7 @@ Spectrum sample_trilinear(HDR_Image const &base, std::vector< HDR_Image > const 
     Spectrum td = (d == 0) ? sample_bilinear(base, uv) : sample_bilinear(levels[d - 1], uv);
     Spectrum td1 = (d1 == 0) ? sample_bilinear(base, uv): sample_bilinear(levels[d1 - 1], uv);
 
-	std::cout << "dd: " << dd << "\n";
-	std::cout << "td: " << td << "\n";
-	std::cout << "td1: " << td1 << "\n";
-
 	auto output = (1.0f - dd) * td + dd * td1;
-
-	std::cout << "trilinear output: " << output << "\n";
 
     return output;
 }
@@ -145,6 +141,10 @@ void generate_mipmap(HDR_Image const &base, std::vector< HDR_Image > *levels_) {
                 // Compute corresponding source coordinates
                 uint32_t src_x = x * 2;
                 uint32_t src_y = y * 2;
+
+				if (src_x + 1 > 1999 || src_y + 1 > 999 || src_x > 1999 || src_y > 999) {
+					std::cout << "(" << src_x << ", " << src_y << ")\n";
+				}
 
                 // Gather pixel samples (handling odd sizes)
                 Spectrum t00 = src.at(src_x, src_y);
