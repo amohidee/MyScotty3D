@@ -58,8 +58,5 @@ HDR_Image Framebuffer::resolve_colors() const {
 			image.at(x, y) = final_color;
 		}
 	}
-
-	std::cout << "greens: " << green_count << "\n";
-
 	return image;
 }
