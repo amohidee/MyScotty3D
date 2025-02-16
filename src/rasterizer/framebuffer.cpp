@@ -31,11 +31,35 @@ HDR_Image Framebuffer::resolve_colors() const {
 
 	HDR_Image image(width, height);
 
+	size_t samples_pp = sample_pattern.centers_and_weights.size();
+
+
 	for (uint32_t y = 0; y < height; ++y) {
 		for (uint32_t x = 0; x < width; ++x) {
-			image.at(x, y) = color_at(x, y, 0);
+			//image.at(x, y) = color_at(x, y, 0);
+			Spectrum final_color(0.0f, 0.0f, 0.0f);
+            float total_weight = 0.0f;
+
+			
+			for (uint32_t s = 0; s < samples_pp; ++s) {
+				float weight = sample_pattern.centers_and_weights[s].z;
+				Spectrum add_color = weight * color_at(x, y, s);
+				final_color += add_color;
+				total_weight += weight;
+			}
+
+			// get weighted average
+			if (total_weight > 0.0f) {
+				final_color *= (1/total_weight);
+			}
+
+			
+		
+			image.at(x, y) = final_color;
 		}
 	}
+
+	std::cout << "greens: " << green_count << "\n";
 
 	return image;
 }

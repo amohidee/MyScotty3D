@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-
+#include "sample_pattern.h"
 #include "../lib/spectrum.h"
 
 class HDR_Image;
@@ -32,7 +32,8 @@ struct Framebuffer {
 	uint32_t index(uint32_t x, uint32_t y, uint32_t s) const {
 		// A1T7: index
 		// TODO: update to provide different storage locations for different samples
-		return y * width + x;
+		size_t samples_pp = sample_pattern.centers_and_weights.size();
+		return (y * width + x) * uint32_t(samples_pp) + s;
 	}
 
 	// helpers that look up colors and depths for sample s of pixel (x,y):

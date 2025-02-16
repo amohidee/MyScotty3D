@@ -1,6 +1,6 @@
 **Assignment 1 Report**
 
-AndrewID: XXXX
+AndrewID: amohidee
 
 (##) About this template
 
@@ -23,7 +23,7 @@ checking that transformations can be correctly applied in the GUI.
 
 Reference image:
 <div class="twentytwenty-container">
-    <img src="A1-writeup/reference/red_wireframe.png" alt="Rasterize cubes wireframe">
+    <img src="A1-writeup/a1t2.png" alt="Rasterize cubes wireframe">
 </div>
 Please replace the above image with your own screenshot of the rasterized wireframe cubes, but all in **RED**.
 This can be done by doing the following:
@@ -39,7 +39,7 @@ checking that rasterizing wireframe meshes will look decent.
 
 Reference image:
 <div class="twentytwenty-container">
-    <img src="A1-writeup/reference/red_flat.png" alt="Rasterize flat cubes">
+    <img src="A1-writeup/a1t3.png" alt="Rasterize flat cubes">
 </div>
 Please replace the above image with your own screenshot of the rasterized flat triangles cubes, but all in **RED**.
 This can be done by doing the following:
@@ -72,7 +72,7 @@ checking that rasterizing with different blend and depth modes will look decent.
 
 Reference image:
 <div class="twentytwenty-container">
-    <img src="A1-writeup/reference/task5-smooth-correct-triangles.png" alt="Rasterize smooth and correct cubes">
+    <img src="A1-writeup/a1t5.png" alt="Rasterize smooth and correct cubes">
 </div>
 Please replace the above image with your own screenshot of the rasterized smooth and correct triangles cubes.
 This can be done by doing the following:
@@ -94,10 +94,15 @@ checking that rasterizing the samplers scene will look decent.
 
 Insert a picture of your sample pattern here (up to you on how you created it):
 <div class="twentytwenty-container">
-    <img src="A1-writeup/reference/task7-sample-pattern.png" alt="Sample pattern">
+    <img src="A1-writeup/custom_sample.png" alt="Sample pattern">
 </div>
 
 Explanation of what your SamplePattern does and scenarios it would do well and poorly in:
+My custom sample is a grid but I rotated it 45 degrees. Jagged edges happen a lot when a thin line is is a diagonal orientation. 
+My idea for the sample was that it samples in a diagonal manner, so that lines that pass diagonally through a pixel will be at 50 percent color more often.
+In a normal 2x2 grid, lines passing through will get 25 percent or 50 percent color a lot, which causes jagged edges. The diagonal orientation helps with this.
+I did 2x2 because multisampling is very expensive. You are basically rendering an image at a higher resolution, but output at a lower resolution.
+I wanted to see if I could improve smoothness while keeping performance optimal. The rotated grid will perform worse for lines that are slightly angled from purely vertical or horizontal, but I dont think it will be that bad.
 
 Your completion will be graded based on the above answer, the reference `test.a1.task7.cpp` file and 
 checking that rasterizing the samplers scene will look decent.
@@ -106,11 +111,10 @@ checking that rasterizing the samplers scene will look decent.
 
 Your image:
 <div class="twentytwenty-container">
-    <img src="A1-writeup/reference/rasterize_image.png" alt="Your creation">
+    <img src="A1-writeup/render.png" alt="Your creation">
 </div>
 Explanation of what it is and how you made it:
-
-Any free model sources you need to credit?
+I created an approximation of the desk I work at. I really wanted to import some objects to create it more accurately but i kept getting some stoi error so I ended up creating everything from cube meshes and then applying images on them.
 
 (##) EXTRA CREDIT FINAL
 
@@ -119,6 +123,9 @@ Use this section to explain any extra credit implementations you have made.
 (##) Feedback
 
 Use this section to provide feedback about the assignment.
+
+I had a lot of fun working on this! One thing is that the Clip Triangle warning confused me and made me debug for a problem that didnt exist. Maybe I was just being silly though.
+Similar to another post on Piazza, I am also getting the depth test error after implementating supersampling, and I have no idea how to fix it. It seems to work in the GUI however.
 
 <!--- Markdeep & image comparison library - probably no need to change anything below -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
