@@ -712,9 +712,36 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(EdgeRef e) 
 
 	std::cout << "f1_id: " << f1->id << " ,f1_degree: " << f1->degree() << ", f2_id: " << f2->id << " ,f2_degree: " << f2->degree() << std::endl;
 
-    // Check for invalid collapses (e.g., topology changes, overlapping edges)
-    if (v1->degree() <= 2 || v2->degree() <= 2) {
+    if (f1->degree() <= 2 || f2->degree() <= 2) {
         return std::nullopt;
+    }
+
+	if (f1->degree() == 3) {
+		bool all_boundary = true;
+		HalfedgeRef h = f1->halfedge;
+		do {
+			if (!h->edge->on_boundary()) {
+				all_boundary = false; 
+			}
+			h = h->next;
+		} while (h != f1->halfedge);
+		if (all_boundary) {
+			return std::nullopt;
+		}
+    }
+
+	if (f2->degree() == 3) {
+		bool all_boundary = true;
+		HalfedgeRef h = f2->halfedge;
+		do {
+			if (!h->edge->on_boundary()) {
+				all_boundary = false; 
+			}
+			h = h->next;
+		} while (h != f2->halfedge);
+		if (all_boundary) {
+			return std::nullopt;
+		}
     }
 
     // Create
