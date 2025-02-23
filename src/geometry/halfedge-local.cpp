@@ -221,9 +221,139 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::bisect_edge(EdgeRef e) {
  */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(EdgeRef e) {
 	// A2L2 (REQUIRED): split_edge
-	
-	(void)e; //this line avoids 'unused parameter' warnings. You can delete it as you fill in the function.
-    return std::nullopt;
+
+    // collect
+    HalfedgeRef h1 = e->halfedge;
+    HalfedgeRef h2 = h1->twin;
+
+	if (h1->face->boundary && h2->face->boundary) {
+		return std::nullopt;
+	}
+    
+
+    VertexRef v1 = h1->vertex;
+    VertexRef v2 = h2->vertex;
+    VertexRef v3 = h1->next->next->vertex;
+    VertexRef v4 = h2->next->next->vertex;
+    
+    FaceRef f1 = h1->face;
+    FaceRef f2 = h2->face;
+
+    // create new stuff
+    VertexRef v_new = *bisect_edge(e);
+
+	HalfedgeRef h2_new = v_new->halfedge;
+	HalfedgeRef h1_new = h2_new->twin;
+	f1 = h1_new->face;
+	f2 = h2_new->face; 
+	h1 = h1_new->next;
+	h2 = h1->twin;
+	EdgeRef e1 = h2_new->edge;
+
+	v1 = h1_new->vertex;
+    v2 = h2->vertex;
+    v3 = h1->next->next->vertex;
+    v4 = h2_new->next->next->vertex;
+
+	if (!h1->face->boundary) {
+		//std::cout << "boundary 1";
+		EdgeRef e2 = emplace_edge();
+
+		FaceRef f3 = emplace_face();
+
+		HalfedgeRef h3 = emplace_halfedge();
+    	HalfedgeRef h3_twin = emplace_halfedge();
+		
+		// Set halfedge connectivity
+
+		
+
+		h3->set_tnvef(h3_twin, h1->next->next, v_new, e2, f1);
+    	h3_twin->set_tnvef(h3, h1, v3, e2, f3);
+
+		h1->face = f3;
+		h1_new->face = f1;
+		h1_new->next = h3;
+		h1->next->next = h3_twin;
+		h1->next->face = f3;
+
+		// set new edge connectivity
+
+		e2->halfedge = h3;
+
+		// set new face connectivity
+
+		f1->halfedge = h1_new;
+		f3->halfedge = h1;
+
+		std::cout << "f1_id: " << f1->id << ", f3_id: " << f3->id << std::endl;
+
+		std::cout << "h1_id: " << h1->id << ", h1_new_id: " << h1_new->id << "h3_id: " << h3->id << ", h3_twin_id: " << h3_twin->id << std::endl;
+
+		HalfedgeRef h = f1->halfedge;
+		std::cout << "f1 ids = ";
+		do {
+			h = h->next;
+			std::cout << h->id << ", ";
+		}
+		while (h != f1->halfedge);
+		std::cout << std::endl;
+
+		
+
+	}
+
+	if(!h2->face->boundary) {
+		//std::cout << "boundary 2";
+		EdgeRef e3 = emplace_edge();
+
+		FaceRef f4 = emplace_face();
+
+		
+		HalfedgeRef h4 = emplace_halfedge();
+		HalfedgeRef h4_twin = emplace_halfedge();
+
+		// Set halfedge connectivity
+		
+		
+		
+		h4->set_tnvef(h4_twin, h2_new->next->next, v_new, e3, f2);
+		h4_twin->set_tnvef(h4, h2_new, v4, e3, f4);
+
+		h2->face = f2;
+		h2_new->face = f4;
+		h2->next = h4;
+		h2_new->next->next = h4_twin;
+		h2_new->next->face = f4;
+
+		// set new edge connectivity
+		
+		e3->halfedge = h4;
+
+		// set new face connectivity
+		
+		f2->halfedge = h2;
+		f4->halfedge = h2_new;
+
+		std::cout << "f2_id: " << f2->id << ", f4_id: " << f4->id << std::endl;
+
+		std::cout << "h2_id: " << h2->id << ", h2_new_id: " << h2_new->id << "h4_id: " << h4->id << ", h4_twin_id: " << h4_twin->id << std::endl;
+
+
+		HalfedgeRef h = f2->halfedge;
+		std::cout << "f2 ids = ";
+		do {
+			h = h->next;
+			std::cout << h->id << ", ";
+		}
+		while (h != f2->halfedge);
+		std::cout << std::endl;
+	}
+
+    
+    
+
+    return v_new;
 }
 
 
@@ -314,8 +444,113 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::extrude_face(FaceRef f) {
 	// Reminder: This function does not update the vertex positions.
 	// Remember to also fill in extrude_helper (A2L4h)
 
-	(void)f;
-    return std::nullopt;
+	if (f->boundary) {
+        return std::nullopt;
+    }
+
+    // collect
+    std::vector<VertexRef> original_vertices;
+    std::vector<HalfedgeRef> original_halfedges;
+    HalfedgeRef h = f->halfedge;
+    do {
+        original_vertices.emplace_back(h->vertex);
+        original_halfedges.emplace_back(h);
+        h = h->next;
+    } while (h != f->halfedge);
+
+    size_t num_vertices = original_vertices.size();
+
+	assert(num_vertices == f->degree());
+
+	// Print IDs of original vertices
+    std::cout << "Original Vertices IDs: ";
+    for (const auto& v : original_vertices) {
+        std::cout << v->id << " ";
+    }
+    std::cout << std::endl;
+
+    // Print IDs of original halfedges
+    std::cout << "Original Halfedges IDs: ";
+    for (const auto& he : original_halfedges) {
+        std::cout << he->id << " ";
+    }
+    std::cout << std::endl;
+    
+    // create
+    std::vector<VertexRef> new_vertices(num_vertices);
+    std::vector<EdgeRef> side_edges(num_vertices);
+	std::vector<EdgeRef> face_edges(num_vertices);
+    std::vector<FaceRef> side_faces(num_vertices);
+    std::vector<HalfedgeRef> new_face_halfedges_inner(num_vertices);
+	std::vector<HalfedgeRef> new_face_halfedges_outer(num_vertices);
+	std::vector<HalfedgeRef> new_quads_halfedges(num_vertices);
+	std::vector<HalfedgeRef> new_quads_halfedges_twins(num_vertices);
+
+    for (size_t i = 0; i < num_vertices; i++) {
+        new_vertices[i] = emplace_vertex();
+        new_vertices[i]->position = original_vertices[i]->position;
+        
+        side_edges[i] = emplace_edge();
+		face_edges[i] = emplace_edge();
+
+        side_faces[i] = emplace_face();
+
+        new_face_halfedges_inner[i] = emplace_halfedge();
+		new_face_halfedges_outer[i] = emplace_halfedge();
+		new_quads_halfedges[i] = emplace_halfedge();
+		new_quads_halfedges_twins[i] = emplace_halfedge();
+    }
+
+    // FaceRef inner_face = emplace_face();
+    
+    // iterate, collect, and connect
+    for (size_t i = 0; i < num_vertices; i++) {
+		
+        size_t next = (i + 1) % num_vertices;
+		size_t prev = (i == 0) ? num_vertices - 1 : i - 1;
+
+        
+        // Retrieve original halfedges
+        HalfedgeRef h_old = original_halfedges[i];
+        
+        // collect side quad halfedges
+        HalfedgeRef h_new = new_quads_halfedges[i];
+        HalfedgeRef h_new_twin = new_quads_halfedges_twins[i];
+
+        
+        // connect side quad halfedges
+        h_new->set_tnvef(h_new_twin, h_old, new_vertices[i], side_edges[i], side_faces[i]);
+        h_new_twin->set_tnvef(h_new, new_face_halfedges_outer[prev], original_vertices[i], side_edges[i], side_faces[prev]);
+        
+        
+        side_faces[i]->halfedge = h_new;
+        side_edges[i]->halfedge = h_new;
+		
+		new_vertices[i]->halfedge = h_new;
+
+        h_old->next = new_quads_halfedges_twins[next];
+        h_old->face = side_faces[i];
+
+		// collect face halfedges
+
+		HalfedgeRef face_halfedge = new_face_halfedges_outer[i];
+        HalfedgeRef face_halfedge_twin = new_face_halfedges_inner[i];
+
+		// connect
+
+		face_halfedge->set_tnvef(face_halfedge_twin, h_new, new_vertices[next], face_edges[i], side_faces[i]);
+        face_halfedge_twin->set_tnvef(face_halfedge, new_face_halfedges_inner[next], new_vertices[i], face_edges[i], f);
+
+		face_edges[i]->halfedge = face_halfedge;
+		f->halfedge = face_halfedge_twin;
+
+		std::cout << "i = " << i << ", h_new = " << h_new->id << ", h_new_twin = " << h_new_twin->id << ", face halfend = " << face_halfedge->id << ", face halfedge twin = " << face_halfedge_twin->id << ", h_old = " << h_old->id << ", h_old next: " << h_old->next->id << std::endl;
+		std::cout << "side face = " << side_faces[i]->id << ", side edge = " << side_edges[i]->id << ", new vertex = " << new_vertices[i]->id << ", old vertex = " << original_vertices[i]->id << ", old vertex halfedge= " << original_vertices[i]->halfedge->id<< ", face edge = " << face_edges[i]->id << std::endl;
+    }
+
+	std::cout << "inner face = " << f->id << std::endl;
+
+    return f;
 }
 
 /*
@@ -331,8 +566,69 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::extrude_face(FaceRef f) {
  */
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(EdgeRef e) {
 	//A2L1: Flip Edge
+
+	if (e->on_boundary()) {
+		return std::nullopt;
+	}
+
+	// collect
+	HalfedgeRef h = e->halfedge;
+	HalfedgeRef t = h->twin;
+	VertexRef v1 = h->next->vertex;
+	VertexRef v2 = t->next->vertex;
+	VertexRef v3 = h->next->next->vertex;
+	VertexRef v4 = t->next->next->vertex;
+	FaceRef f1 = h->face;
+	FaceRef f2 = t->face;
+
+
+	HalfedgeRef h_prev = h;
+	do {
+		if (h_prev->next == h) {
+			break;
+		}
+		h_prev = h_prev->next;
+	} while (h_prev != h);
+	assert(h_prev != h);
+
+	HalfedgeRef t_prev = t;
+	do {
+		if (t_prev->next == t) {
+			break;
+		}
+		t_prev = t_prev->next;
+	} while (t_prev != t);
+	assert(t_prev != t);
+
+	HalfedgeRef h_next = h->next;
+	HalfedgeRef t_next = t->next;
+
+
+	// disconnect
+	h_prev->next = t_next;
+	t_prev->next = h_next;
 	
-    return std::nullopt;
+	v1->halfedge = h_next;
+	v2->halfedge = t_next;
+	f1->halfedge = h;
+	f2->halfedge = t;
+
+	t->next->face = f1;
+	h->next->face = f2;
+
+	
+
+
+	// connect
+	h->next = h_next->next;
+	t->next = t_next->next;
+	t_next->next = h;
+	h_next->next = t;
+	t->vertex = v3;
+	h->vertex = v4;
+	
+
+	return std::make_optional(e);
 }
 
 
@@ -392,6 +688,174 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(EdgeRef e) 
 
 	//Reminder: use interpolate_data() to merge corner_uv / corner_normal data on halfedges
 	// (also works for bone_weights data on vertices!)
+
+	// if (e->on_boundary()) {
+    //     return std::nullopt;
+    // }
+
+    // collect
+    HalfedgeRef h1 = e->halfedge;
+    HalfedgeRef h2 = h1->twin;
+	HalfedgeRef h_new = h1->next;
+    
+    VertexRef v1 = h1->vertex;
+    VertexRef v2 = h2->vertex;
+
+	FaceRef f1 = h1->face;
+	FaceRef f2 = h2->face;
+	uint32_t f1_degree = f1->degree();
+	uint32_t f2_degree = f2->degree();
+
+	std::cout << "v1_id: " << v1->id << ", v2_id: " << v2->id << std::endl;
+
+	std::cout << "h1_id: " << h1->id << ", h2_id: " << h2->id << std::endl;
+
+	std::cout << "f1_id: " << f1->id << " ,f1_degree: " << f1->degree() << ", f2_id: " << f2->id << " ,f2_degree: " << f2->degree() << std::endl;
+
+    // Check for invalid collapses (e.g., topology changes, overlapping edges)
+    if (v1->degree() <= 2 || v2->degree() <= 2) {
+        return std::nullopt;
+    }
+
+    // Create
+    VertexRef v_new = emplace_vertex();
+    v_new->position = (v1->position + v2->position) * 0.5f;
+    interpolate_data({v1, v2}, v_new);
+
+	std::cout << "v_new_id: " << v_new->id << std::endl;
+
+
+	// helper for triangle faces
+	auto merge_edges = [&](FaceRef f) {
+        //if (f->degree() == 3) {
+			std::cout << "merging " << f->id << " with degree " << f->degree() << std::endl;
+
+			// collect
+			HalfedgeRef h = e->halfedge;
+			if (h->face != f) {
+				h = h->twin;
+			}
+            HalfedgeRef h_next = h->next;
+			HalfedgeRef h_next_twin = h_next->twin;
+            HalfedgeRef h_prev = h_next->next;
+			HalfedgeRef h_prev_twin = h_prev->twin;
+			std::cout << "h_next: " << h_next->id << ", h_prev: " << h_prev->id << std::endl;
+			std::cout << "h_next_twin: " << h_next_twin->id << ", h_prev_twin: " << h_prev_twin->id << std::endl;
+
+			VertexRef v3 = h_prev->vertex;
+            
+            EdgeRef e_merge = h_next->edge;
+            EdgeRef e_remove = h_prev->edge;
+
+			// REMOVE: h_next, h_prev
+			// KEEP: h_next_twin, h_prev_twin
+            
+            // interpolate
+            interpolate_data({h_next_twin, h_prev}, h_next_twin);
+            interpolate_data({h_next, h_prev_twin}, h_prev_twin);
+            
+            // connect
+
+			// vertices new halfedge
+			v_new->halfedge =h_prev_twin;
+			v3->halfedge = h_next_twin;
+
+			
+			e_merge->halfedge = h_next_twin;
+			
+			// h prev twin new values
+			h_prev_twin->edge = e_merge;
+			h_prev_twin->vertex = v_new;
+
+			// set new twins
+			h_next_twin->twin = h_prev_twin;
+			h_prev_twin->twin = h_next_twin;
+            
+            // delete
+            erase_halfedge(h_next);
+            erase_halfedge(h_prev);
+			erase_edge(e_remove);
+            erase_face(f);
+
+			std::cout << "finish merge: " << std::endl;
+        //}
+    };
+
+	
+    
+
+    // connect halfedges to new vertex
+	std::cout << "connecting v1" << std::endl;
+	std::cout << "ids: ";
+    HalfedgeRef h = v1->halfedge;
+    do {
+		std::cout << h->id << ", ";
+        h->vertex = v_new;
+        h = h->twin->next;
+    } while (h != v1->halfedge);
+
+	std::cout << "\nconnecting v2" << std::endl;
+    h = v2->halfedge;
+    do {
+        h->vertex = v_new;
+        h = h->twin->next;
+    } while (h != v2->halfedge);
+
+
+	// if triangle, merge edges
+	if (f1_degree == 3) {
+		merge_edges(f1);
+	} else {
+		f1->halfedge = h1->next;
+		std::cout << "connecting f1" << std::endl;
+		std::cout << "ids: ";
+		h = h1;
+		do {
+			std::cout << h->id << ", ";
+			if (h->next == h1) {
+				h->next = h->next->next;
+				break;
+			}
+			h = h->next;
+		} while (h != h1);
+	}
+	if (f2_degree == 3) {
+		merge_edges(f2);
+	} else {
+		f2->halfedge = h2->next;
+		h = h2;
+		do {
+			if (h->next == h2) {
+				h->next = h->next->next;
+				break;
+			}
+			h = h->next;
+		} while (h != h2);
+	}
+	std::cout << "v_new halfedge id: " << v_new->halfedge->id << std::endl; 
+	// make sure halfedges poiting to old halfedges are redirected
+	
+
+	std::cout << "\nconnecting f2" << std::endl;
+	
+
+	// v_new halfedge
+	if (f1_degree != 3 && f2_degree != 3) {
+		v_new->halfedge = h_new;
+	}
+
+	
+
+    // delete
+    erase_edge(e);
+	erase_halfedge(h1);
+	erase_halfedge(h2);
+    erase_vertex(v1);
+    erase_vertex(v2);
+
+	std::cout << "v_new halfedge id: " << v_new->halfedge->id << std::endl; 
+
+    return std::make_optional(v_new);
 	
     return std::nullopt;
 }
@@ -484,6 +948,24 @@ void Halfedge_Mesh::extrude_positions(FaceRef face, Vec3 move, float shrink) {
 	// use mesh navigation to get starting positions from the surrounding faces,
 	// compute the centroid from these positions + use to shrink,
 	// offset by move
+
+	// collect
+	std::vector<VertexRef> face_vertices;
+	HalfedgeRef h = face->halfedge;
+	do
+	{
+		face_vertices.emplace_back(h->vertex);
+		h = h->next;
+	} while (h != face->halfedge);
+
+	Vec3 center_pt = face->center();
+
+	// shrink
+	for (auto v : face_vertices)
+	{
+		v->position = shrink * center_pt + (1 - shrink) * v->position;
+		v->position += move;
+	}
 	
 }
 
