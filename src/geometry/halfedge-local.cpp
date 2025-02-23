@@ -248,7 +248,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(EdgeRef e) {
 	f2 = h2_new->face; 
 	h1 = h1_new->next;
 	h2 = h1->twin;
-	EdgeRef e1 = h2_new->edge;
+	//EdgeRef e1 = h2_new->edge;
 
 	v1 = h1_new->vertex;
     v2 = h2->vertex;
