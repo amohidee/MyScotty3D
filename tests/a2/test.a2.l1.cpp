@@ -96,3 +96,86 @@ Test test_a2_l1_flip_edge_edge_boundary("a2.l1.flip_edge.edge.boundary", []() {
 	}
 });
 
+/*
+  2
+ / \
+0---1
+ \ /
+  3
+
+Flip edge 0-1
+
+After mesh:
+  2
+ /|\
+0 | 1
+ \|/
+  3
+ */
+
+ Test test_a2_l1_flip_doubletriangle("a2.l1.flip_edge.edge.doubletriangle", []() {
+    Halfedge_Mesh mesh = Halfedge_Mesh::from_indexed_faces({
+        Vec3(-1.0f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f)
+    }, {
+        {0, 1, 2},
+        {0, 3, 1}
+    });
+
+    Halfedge_Mesh::EdgeRef edge = mesh.halfedges.begin()->edge;
+
+    Halfedge_Mesh after = Halfedge_Mesh::from_indexed_faces({
+        Vec3(-1.0f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f)
+    }, {
+        {0, 3, 2},
+        {3, 1, 2}
+    });
+
+    expect_flip(mesh, edge, after);
+
+});
+
+
+/*
+  - 2
+ / / \
+4-0---1
+ \ \ /
+  - 3
+
+Flip edge 0-1
+
+After mesh:
+  - 2
+ / /|\
+4-0 | 1
+ \ \|/
+  - 3
+ */
+
+Test test_a2_l1_flip_embedded_doubletriangle("a2.l1.flip_edge.edge.embedded_doubletriangle", []() {
+    Halfedge_Mesh mesh = Halfedge_Mesh::from_indexed_faces({
+        Vec3(-1.0f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f), Vec3(-2.0f, 0.0f, 0.0f)
+    }, {
+        {0, 1, 2},
+        {0, 3, 1},
+        {2, 4, 3, 0}
+    });
+
+    Halfedge_Mesh::EdgeRef edge = mesh.halfedges.begin()->edge;
+
+    Halfedge_Mesh after = Halfedge_Mesh::from_indexed_faces({
+        Vec3(-1.0f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f), Vec3(-2.0f, 0.0f, 0.0f)
+    }, {
+        {0, 3, 2},
+        {3, 1, 2},
+        {2, 4, 3, 0}
+    });
+
+    expect_flip(mesh, edge, after);
+
+});
+

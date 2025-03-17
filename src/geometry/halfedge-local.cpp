@@ -286,18 +286,18 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(EdgeRef e) {
 		f1->halfedge = h1_new;
 		f3->halfedge = h1;
 
-		std::cout << "f1_id: " << f1->id << ", f3_id: " << f3->id << std::endl;
+		// std::cout << "f1_id: " << f1->id << ", f3_id: " << f3->id << std::endl;
 
-		std::cout << "h1_id: " << h1->id << ", h1_new_id: " << h1_new->id << "h3_id: " << h3->id << ", h3_twin_id: " << h3_twin->id << std::endl;
+		// std::cout << "h1_id: " << h1->id << ", h1_new_id: " << h1_new->id << "h3_id: " << h3->id << ", h3_twin_id: " << h3_twin->id << std::endl;
 
 		HalfedgeRef h = f1->halfedge;
-		std::cout << "f1 ids = ";
-		do {
-			h = h->next;
-			std::cout << h->id << ", ";
-		}
-		while (h != f1->halfedge);
-		std::cout << std::endl;
+		// std::cout << "f1 ids = ";
+		// do {
+		// 	h = h->next;
+		// 	std::cout << h->id << ", ";
+		// }
+		// while (h != f1->halfedge);
+		// std::cout << std::endl;
 
 		
 
@@ -335,19 +335,19 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(EdgeRef e) {
 		f2->halfedge = h2;
 		f4->halfedge = h2_new;
 
-		std::cout << "f2_id: " << f2->id << ", f4_id: " << f4->id << std::endl;
+		// std::cout << "f2_id: " << f2->id << ", f4_id: " << f4->id << std::endl;
 
-		std::cout << "h2_id: " << h2->id << ", h2_new_id: " << h2_new->id << "h4_id: " << h4->id << ", h4_twin_id: " << h4_twin->id << std::endl;
+		// std::cout << "h2_id: " << h2->id << ", h2_new_id: " << h2_new->id << "h4_id: " << h4->id << ", h4_twin_id: " << h4_twin->id << std::endl;
 
 
-		HalfedgeRef h = f2->halfedge;
-		std::cout << "f2 ids = ";
-		do {
-			h = h->next;
-			std::cout << h->id << ", ";
-		}
-		while (h != f2->halfedge);
-		std::cout << std::endl;
+		// HalfedgeRef h = f2->halfedge;
+		// std::cout << "f2 ids = ";
+		// do {
+		// 	h = h->next;
+		// 	std::cout << h->id << ", ";
+		// }
+		// while (h != f2->halfedge);
+		// std::cout << std::endl;
 	}
 
     

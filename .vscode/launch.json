@@ -27,7 +27,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Scotty3D",
-            "args": ["--run-tests", "a1.task6"],
+            "args": ["--run-tests", "a2.g1"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/media",
             "environment": [],

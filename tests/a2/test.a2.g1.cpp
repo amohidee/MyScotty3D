@@ -122,3 +122,37 @@ Test test_a2_g1_triangulate_basic_quad_cube("a2.g1.triangulate.basic.quad_cube",
 	// Many different implementations of triangulating, so just checks that all the faces are triangles and some other misc things
 	expect_triangulate(mesh);
 });
+
+
+Test test_a2_g1_triangulate_basic_octagon("a2.g1.triangulate.basic.octagon", []() {
+
+    Halfedge_Mesh mesh = Halfedge_Mesh::from_indexed_faces({
+
+        Vec3{-1.0f,  0.0f,  1.0f},
+
+        Vec3{-1.5f, -0.5f,  0.0f},
+
+        Vec3{-1.0f, -1.0f, -1.0f},
+
+        Vec3{ 0.0f, -1.5f, -1.5f},
+
+        Vec3{ 1.0f, -1.0f, -1.0f},
+
+        Vec3{ 1.5f, -0.5f,  0.0f},
+
+        Vec3{ 1.0f,  0.0f,  1.0f},
+
+        Vec3{ 0.0f,  0.5f,  1.5f}
+
+    },{
+
+        {0, 1, 2, 3, 4, 5, 6, 7}
+
+    });
+
+
+
+
+    expect_triangulate(mesh);
+
+});

@@ -102,3 +102,126 @@ Test test_a2_l2_split_edge_edge_boundary("a2.l2.split_edge.edge.boundary", []() 
 	expect_split(mesh, edge, after);
 });
 
+/*
+
+Initial Mesh:
+
+0---1---2
+|   |   |
+|   |   | 
+|   |   |    
+3---4---5   
+
+split 1-4
+
+After Mesh:
+
+0---1---2
+| \ |   |
+|   6   | 
+|   | \ |    
+3---4---5   
+
+*/
+
+
+
+
+Test test_a2_l2_split_center("a2.l2.collapse_edge.split.center", []() {
+
+    Halfedge_Mesh before = Halfedge_Mesh::from_indexed_faces({
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f), Vec3(1.0f, 1.0f, 0.0f),
+Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f)
+    }, {
+        {3,4,1,0},
+        {1,4,5,2},
+    }); 
+
+Halfedge_Mesh after = Halfedge_Mesh::from_indexed_faces({
+
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f), Vec3(1.0f, 1.0f, 0.0f),
+Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f),
+Vec3(0.5f, 0.5f, 0.0f)
+    }, {
+    {1,0,6},
+    {0,3,4,6},
+    {6,4,5},
+    {6,5,2,1}
+    });
+
+    Halfedge_Mesh::EdgeRef edge = before.halfedges.begin()->next->edge;
+expect_split(before, edge, after);
+});
+
+/*
+
+0---1
+|   |
+|   |
+2---3
+0---1
+| \ 4
+|   |
+2---3
+
+split 1-3
+
+*/
+
+Test test_a2_l2_split_edge("a2.l2.collapse_edge.split.edge", []() {
+
+    Halfedge_Mesh before = Halfedge_Mesh::from_indexed_faces({
+
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f),
+Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f)
+
+    }, {
+        {0,2,3,1},
+    }); 
+
+Halfedge_Mesh after = Halfedge_Mesh::from_indexed_faces({
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f),Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), 
+Vec3(0.5f, 0.5f, 0.0f)
+   }, {
+        {0,4,1},
+	{0,2,3,4}
+    });
+
+    Halfedge_Mesh::EdgeRef edge = before.halfedges.begin()->next->next->edge;
+expect_split(before, edge, after);
+});
+
+/*
+
+0---1
+|   |
+|   |
+2---3
+
+0---1
+|   |
+4 \ |
+2---3
+
+split 0-2
+
+*/
+
+Test test_a2_l2_split_edge_rotated("a2.l2.collapse_edge.split.edge.rotated", []() {
+   Halfedge_Mesh before = Halfedge_Mesh::from_indexed_faces({
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f),Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f)
+    }, {
+        {0,2,3,1},
+    }); 
+
+Halfedge_Mesh after = Halfedge_Mesh::from_indexed_faces({
+        Vec3(0.0f, 1.0f, 0.0f), Vec3(0.5f, 1.0f, 0.0f),Vec3(0.0f, 0.0f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), 
+Vec3(0.0f, 0.5f, 0.0f)
+    }, {
+        {0,4,3,1},
+	{4,2,3}
+    });
+
+    Halfedge_Mesh::EdgeRef edge = before.halfedges.begin()->next->next->next->next->edge;
+expect_split(before, edge, after);
+});
