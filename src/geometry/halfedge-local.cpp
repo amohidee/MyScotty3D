@@ -290,7 +290,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(EdgeRef e) {
 
 		// std::cout << "h1_id: " << h1->id << ", h1_new_id: " << h1_new->id << "h3_id: " << h3->id << ", h3_twin_id: " << h3_twin->id << std::endl;
 
-		HalfedgeRef h = f1->halfedge;
+		// HalfedgeRef h = f1->halfedge;
 		// std::cout << "f1 ids = ";
 		// do {
 		// 	h = h->next;
