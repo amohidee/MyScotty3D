@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-#pragma optimize( "", off )
 /*
  * triangulate: split all non-boundary faces into triangles.
  *
@@ -24,7 +23,6 @@ void Halfedge_Mesh::triangulate() {
 		HalfedgeRef h_start = f->halfedge;
 		std::cout << "h start position:: " << h_start->vertex->position << std::endl;
 		HalfedgeRef h = h_start;
-		FaceRef curr_face = f;
 		
 		VertexRef base_vertex = h_start->vertex;
 		
@@ -60,7 +58,6 @@ void Halfedge_Mesh::triangulate() {
 	}
 	
 }
-#pragma optimize( "", on )
 
 /*
  * linear_subdivide: split faces into quads without moving anything.
@@ -323,8 +320,6 @@ bool Halfedge_Mesh::loop_subdivide() {
 			HalfedgeRef h = v_new->halfedge;
 			do {
 				EdgeRef new_edge = h->edge;
-				VertexRef u = E->halfedge->vertex;
-				VertexRef v = E->halfedge->twin->vertex;
 				if (new_edge->halfedge->vertex != old_v1 && new_edge->halfedge->twin->vertex != old_v1 &&
                     new_edge->halfedge->vertex != old_v2 && new_edge->halfedge->twin->vertex != old_v2) {
                     new_edges.push_back(new_edge);
@@ -364,8 +359,8 @@ bool Halfedge_Mesh::loop_subdivide() {
     for (EdgeRef e : new_edges) {
         if (is_new(e->halfedge->vertex) != is_new(e->halfedge->twin->vertex)) {
             flip_edge(e);
-			VertexRef A = e->halfedge->vertex;
-			VertexRef B = e->halfedge->twin->vertex;
+			// VertexRef A = e->halfedge->vertex;
+			// VertexRef B = e->halfedge->twin->vertex;
 			// std::cout << "flipped: (" << A->position << ", " << B->position << "), " << std::endl;
         }
     }
