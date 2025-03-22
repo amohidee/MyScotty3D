@@ -5,6 +5,7 @@
 #include "tri_mesh.h"
 
 #include <stack>
+#include <iostream>
 
 namespace PT {
 
@@ -31,9 +32,123 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
 
     // Construct a BVH from the given vector of primitives and maximum leaf
     // size configuration.
-
+    if (primitives.empty()) return;
 	//TODO
+    root_idx = build_recursive(0, primitives.size(), max_leaf_size);
+}
 
+template<typename Primitive>
+size_t BVH<Primitive>::build_recursive(size_t start, size_t end, size_t max_leaf_size) {
+    size_t count = end - start;
+    // std::cout << "(start, end, count) = (" << start << ", " << end << ", " << count << ")" << std::endl;
+
+    // compute sub bbox for recursive call
+    BBox bounds;
+    BBox centroid_bounds;
+
+    for (size_t i = start; i < end; i++) {
+        bounds.enclose(primitives[i].bbox());
+    }
+    for (size_t i = start; i < end; i++) {
+        centroid_bounds.enclose(primitives[i].bbox().center());
+    }
+
+    
+
+    
+    struct Bucket {
+        BBox bbox;
+        size_t count = 0;
+    };
+
+    const int num_buckets = 12;
+    float best_cost = std::numeric_limits<float>::infinity();
+    int best_axis = -1;
+    int best_split = -1;
+
+
+    // base case: create leaf
+    if (count <= max_leaf_size) {
+        return new_node(bounds, start, count, 0, 0);
+    }
+
+    // else recursive case
+    for (int axis = 0; axis < 3; axis++) {
+        Bucket buckets[num_buckets];
+
+        if (centroid_bounds.max[axis] - centroid_bounds.min[axis] < 1e-8f) {
+            continue;
+        }
+
+        // compute_bucket(p.centroid)
+        for (size_t i = start; i < end; i++) {
+            Vec3 centroid = primitives[i].bbox().center();
+            float relative_pos = (centroid[axis] - centroid_bounds.min[axis]) / (centroid_bounds.max[axis] - centroid_bounds.min[axis]);
+            int bucket_num = std::min(int(relative_pos * num_buckets), num_buckets - 1);
+            buckets[bucket_num].bbox.enclose(primitives[i].bbox());
+            buckets[bucket_num].count++;
+        }
+
+        // for each |B| - 1 possible partitions
+        for (int split = 1; split < num_buckets; split++) {
+            BBox left_bbox;
+			BBox right_bbox;
+            size_t left_count = 0;
+			size_t right_count = 0;
+
+            // split into left and right bbox
+
+            for (int i = 0; i < split; i++) {
+                left_bbox.enclose(buckets[i].bbox);
+                left_count += buckets[i].count;
+            }
+
+            for (int i = split; i < num_buckets; i++) {
+                right_bbox.enclose(buckets[i].bbox);
+                right_count += buckets[i].count;
+            }
+
+            if (left_count == 0 || right_count == 0) continue;
+
+            // calculate surface area using SAH
+
+            float SA_left = left_bbox.surface_area();
+            float SA_right = right_bbox.surface_area();
+            float SA_total = bounds.surface_area();
+
+            float cost = 0.125f + (SA_left / SA_total) * left_count + 
+                         (SA_right / SA_total) * right_count;
+
+            if (cost < best_cost) {
+                best_cost = cost;
+                best_axis = axis;
+                best_split = split;
+            }
+        }
+    }
+
+    // recurse on lowest cost partition found (or make node leaf)
+    if (best_axis == -1) {
+        // std::cout << "best axis = -1" << std::endl;
+        return new_node(bounds, start, count, 0, 0);
+    }
+
+    float relative_split = (centroid_bounds.max[best_axis] - centroid_bounds.min[best_axis]) * (float(best_split) / num_buckets);
+
+    float split_val = centroid_bounds.min[best_axis] + relative_split;
+
+    // std::partition call
+    auto mid = std::partition(primitives.begin() + start, primitives.begin() + end,
+        [best_axis, split_val](const Primitive& p) { return p.bbox().center()[best_axis] < split_val; });
+
+    size_t mid_idx = mid - primitives.begin();
+
+    // edge case: mid_idx == start or end???
+
+    size_t left = build_recursive(start, mid_idx, max_leaf_size);
+    size_t right = build_recursive(mid_idx, end, max_leaf_size);
+
+    return new_node(bounds, start, count, left, right);
 }
 
 template<typename Primitive> Trace BVH<Primitive>::hit(const Ray& ray) const {
@@ -48,11 +163,55 @@ template<typename Primitive> Trace BVH<Primitive>::hit(const Ray& ray) const {
 
 	//TODO: replace this code with a more efficient traversal:
     Trace ret;
-    for(const Primitive& prim : primitives) {
-        Trace hit = prim.hit(ray);
-        ret = Trace::min(ret, hit);
+    if (nodes.empty()) {
+        return ret;
     }
+    find_closest_hit(ray, &nodes[root_idx], &ret);
     return ret;
+}
+
+template<typename Primitive>
+void BVH<Primitive>::find_closest_hit(const Ray& ray, const Node* node, Trace* closest) const {
+
+    // first check if ray even hits bounding box
+    Vec2 t_bounds = ray.dist_bounds;
+    if (!node->bbox.hit(ray, t_bounds)) return;
+
+    if (node->is_leaf()) {
+        // leaf case
+        for (size_t i = node->start; i < node->start + node->size; i++) {
+            Trace hit = primitives[i].hit(ray);
+            *closest = Trace::min(*closest, hit);
+        }
+    } else {
+        // internal node
+        const Node* left = &nodes[node->l];
+        const Node* right = &nodes[node->r];
+
+        Vec2 t_left = ray.dist_bounds;
+        Vec2 t_right = ray.dist_bounds;
+
+        bool hit_left = left->bbox.hit(ray, t_left);
+        bool hit_right = right->bbox.hit(ray, t_right);
+
+        if (hit_left && hit_right) {
+            bool left_first = t_left.x <= t_right.x;
+
+            const Node* first = left_first ? left : right;
+            const Node* second = left_first ? right : left;
+            float t_second = left_first ? t_right.x : t_left.x;
+
+            find_closest_hit(ray, first, closest);
+
+            if (!closest->hit || t_second < closest->distance) {
+                find_closest_hit(ray, second, closest);
+            }
+        } else if (hit_left) {
+            find_closest_hit(ray, left, closest);
+        } else if (hit_right) {
+            find_closest_hit(ray, right, closest);
+        }
+    }
 }
 
 template<typename Primitive>

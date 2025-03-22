@@ -1,6 +1,7 @@
 
 #include "shape.h"
 #include "../geometry/util.h"
+#include <iostream>
 
 namespace Shapes {
 
@@ -30,13 +31,49 @@ PT::Trace Sphere::hit(Ray ray) const {
     // but only the _later_ one is within ray.dist_bounds, you should
     // return that one!
 
-    PT::Trace ret;
+	PT::Trace ret;
     ret.origin = ray.point;
-    ret.hit = false;       // was there an intersection?
-    ret.distance = 0.0f;   // at what distance did the intersection occur?
-    ret.position = Vec3{}; // where was the intersection?
-    ret.normal = Vec3{};   // what was the surface normal at the intersection?
-	ret.uv = Vec2{}; 	   // what was the uv coordinates at the intersection? (you may find Sphere::uv to be useful)
+    ret.hit = false;           // was there an intersection?
+
+
+	Vec3 o = ray.point;
+    Vec3 d = ray.dir;
+    float r = radius;
+
+	// quadratic coeff
+	float a = dot(d, d);
+    float b = 2.0f * dot(o, d);
+    float c = dot(o, o) - r * r;
+
+	float discriminant = b * b - 4.0f * a * c;
+
+	if (discriminant < 0.0f) {
+        return ret;
+    }
+	
+	float t0 = (-b - std::sqrt(discriminant)) / (2.0f * a);
+    float t1 = (-b + std::sqrt(discriminant)) / (2.0f * a);
+
+	float t = -1.0f;
+    if (t0 >= ray.dist_bounds.x && t0 <= ray.dist_bounds.y) {
+        t = t0;
+    } else if (t1 >= ray.dist_bounds.x && t1 <= ray.dist_bounds.y) {
+        t = t1;
+    } else {
+        return ret;
+    }
+
+	Vec3 normal = (ray.at(t) / radius).unit();
+
+	// std::cout << "Normal: " << normal << std::endl;
+
+
+
+	ret.hit = true;
+    ret.distance = t;   // at what distance did the intersection occur?
+    ret.position = ray.at(t); // where was the intersection?
+    ret.normal = normal;   // what was the surface normal at the intersection?
+	ret.uv = uv(normal); 	   // what was the uv coordinates at the intersection? (you may find Sphere::uv to be useful)
     return ret;
 }
 

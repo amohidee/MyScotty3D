@@ -25,6 +25,7 @@ public:
 	BVH() = default;
 	BVH(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
 	void build(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
+	size_t build_recursive(size_t start, size_t end, size_t max_leaf_size);
 
 	BVH(BVH&& src) = default;
 	BVH& operator=(BVH&& src) = default;
@@ -34,8 +35,9 @@ public:
 
 	BBox bbox() const;
 	Trace hit(const Ray& ray) const;
+    void find_closest_hit(const Ray &ray, const Node *node, Trace *closest) const;
 
-	template<typename P = Primitive>
+    template<typename P = Primitive>
 	typename std::enable_if<std::is_copy_assignable_v<P>, BVH<P>>::type copy() const;
 
 	uint32_t visualize(GL::Lines& lines, GL::Lines& active, uint32_t level,
